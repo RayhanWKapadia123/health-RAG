@@ -30,8 +30,8 @@ def ask_api(question: str, history: list[dict]) -> dict:
 
 def generate_followups(question: str, answer: str) -> list[str]:
     response = _openai.chat.completions.create(
-        model="gpt-4o-mini",
-        max_tokens=256,
+        model="gpt-5.6-terra",
+        max_completion_tokens=256,
         messages=[
             {
                 "role": "system",

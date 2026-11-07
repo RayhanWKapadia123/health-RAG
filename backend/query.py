@@ -42,9 +42,9 @@ def rewrite_query(question: str, history: list[dict]) -> str:
     })
 
     response = _openai.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5.6-terra",
         messages=messages,
-        max_tokens=128,
+        max_completion_tokens=128,
     )
     return response.choices[0].message.content.strip()
 
@@ -80,7 +80,7 @@ def answer(question: str, chunks: list[dict], history: list[dict]) -> str:
         {
             "role": "system",
             "content": (
-                "You are a healthcare assistant. In plain and simple terms, answer the user's question. \n\n"
+                "You are a healthcare assistant. Answer the user's question given the context provided to you. \n\n"
                 f"Context:\n{context}"
             ),
         }
@@ -92,7 +92,7 @@ def answer(question: str, chunks: list[dict], history: list[dict]) -> str:
     messages.append({"role": "user", "content": question})
 
     response = _openai.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5.6-terra",
         messages=messages,
     )
     return response.choices[0].message.content
