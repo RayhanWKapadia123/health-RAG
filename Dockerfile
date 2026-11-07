@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY scraper/ ./scraper/
 COPY mongo-init/ ./mongo-init/
+COPY src/ ./src/
 
 WORKDIR /app/scraper
 
