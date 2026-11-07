@@ -80,7 +80,7 @@ def answer(question: str, chunks: list[dict], history: list[dict]) -> str:
         {
             "role": "system",
             "content": (
-                "You are a healthcare assistant. Answer the user's question given the context provided to you. \n\n"
+                "You are a healthcare assistant. Answer the user's question given the context provided to you. Only talk about information relevant to health in the state of Indiana. \n\n"
                 f"Context:\n{context}"
             ),
         }
