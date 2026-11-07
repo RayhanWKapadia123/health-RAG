@@ -93,6 +93,7 @@ services:
       - .env
     environment:
       API_URL: http://api:8000
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
     ports:
       - "8501:8501"
     depends_on:

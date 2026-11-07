@@ -1,5 +1,6 @@
 import io
 import os
+import uuid
 
 import httpx
 from audiorecorder import audiorecorder
@@ -7,6 +8,12 @@ from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
 from pathlib import Path
+from datetime import datetime, timezone
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
+from reportlab.lib import colors
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
@@ -182,6 +189,139 @@ STYLE = """
 """
 
 
+def save_message(session_id: str, role: str, content: str, sources: list = None):
+    if not _mongo_available:
+        return
+    _conversations.insert_one({
+        "session_id": session_id,
+        "role": role,
+        "content": content,
+        "sources": sources or [],
+        "timestamp": datetime.now(timezone.utc),
+    })
+
+
+def load_history(session_id: str) -> list[dict]:
+    if not _mongo_available:
+        return st.session_state.messages
+    return list(_conversations.find(
+        {"session_id": session_id},
+        {"_id": 0, "role": 1, "content": 1, "sources": 1},
+    ).sort("timestamp", 1))
+
+
+def clear_history(session_id: str):
+    if _mongo_available:
+        _conversations.delete_many({"session_id": session_id})
+
+
+def generate_action_plan(pairs: list[tuple]) -> str:
+    conversation_text = "\n\n".join(
+        f"Q: {q}\nA: {a}" for q, a in pairs
+    )
+    response = _openai.chat.completions.create(
+        model="gpt-5.6-terra",
+        max_completion_tokens=800,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You are writing a 1-2 page printed Action Plan for an Indiana resident with limited "
+                    "health literacy. They may not have internet access. They will print this and carry it.\n\n"
+                    "STRICT RULES:\n"
+                    "- Maximum 2 pages when printed. Be concise. No filler words.\n"
+                    "- Do NOT repeat any information. Say each thing once.\n"
+                    "- Do NOT copy sentences from the conversation. Summarize in your own words.\n"
+                    "- Use plain English. No medical jargon.\n"
+                    "- Every resource MUST include a real phone number and/or address. No vague references.\n\n"
+                    "FORMAT — use exactly these 4 sections, nothing more:\n"
+                    "1. What We Found\n"
+                    "   - 2-3 bullet points only. Key health concerns from the conversation.\n"
+                    "2. Who Needs the Most Help\n"
+                    "   - 2-3 bullet points. Specific counties or groups at highest risk.\n"
+                    "3. Action Steps\n"
+                    "   - 3-5 numbered steps. Concrete and specific.\n"
+                    "4. Where to Get Help\n"
+                    "   - 2-4 resources only. Each must have: Name, Phone, Address or Website.\n"
+                    "   - Include 211 Indiana if relevant.\n"
+                ),
+            },
+            {"role": "user", "content": conversation_text},
+        ],
+    )
+    return response.choices[0].message.content.strip()
+
+
+def build_pdf(action_plan: str, pairs: list[tuple]) -> bytes:
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=letter,
+                            leftMargin=0.9*inch, rightMargin=0.9*inch,
+                            topMargin=inch, bottomMargin=inch)
+
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle("title", parent=styles["Title"],
+                                 fontSize=26, leading=32,
+                                 textColor=colors.HexColor("#1e3a5f"),
+                                 spaceAfter=4, fontName="Helvetica-Bold")
+    subtitle_style = ParagraphStyle("subtitle", parent=styles["Normal"],
+                                    fontSize=12, textColor=colors.HexColor("#64748b"),
+                                    spaceAfter=16)
+    section_style = ParagraphStyle("section", parent=styles["Normal"],
+                                   fontSize=15, leading=20, fontName="Helvetica-Bold",
+                                   textColor=colors.white,
+                                   backColor=colors.HexColor("#1e3a5f"),
+                                   spaceBefore=18, spaceAfter=8,
+                                   leftIndent=-6, rightIndent=-6,
+                                   borderPad=6)
+    body_style = ParagraphStyle("body", parent=styles["Normal"],
+                                fontSize=13, leading=19,
+                                textColor=colors.HexColor("#1f2937"),
+                                spaceAfter=6)
+    bullet_style = ParagraphStyle("bullet", parent=styles["Normal"],
+                                  fontSize=14, leading=20, fontName="Helvetica-Bold",
+                                  textColor=colors.HexColor("#1e3a5f"),
+                                  leftIndent=20, spaceAfter=6,
+                                  bulletIndent=6)
+    resource_style = ParagraphStyle("resource", parent=styles["Normal"],
+                                    fontSize=14, leading=20, fontName="Helvetica-Bold",
+                                    textColor=colors.HexColor("#1e40af"),
+                                    backColor=colors.HexColor("#eff6ff"),
+                                    leftIndent=12, spaceAfter=6,
+                                    borderPad=6)
+
+    story = []
+
+    story.append(Paragraph("Indiana Healthcare Intelligence", title_style))
+    story.append(Paragraph(f"Your Personal Action Plan  ·  {datetime.now().strftime('%B %d, %Y')}", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=2, color=colors.HexColor("#1e3a5f")))
+    story.append(Spacer(1, 10))
+    story.append(Paragraph(
+        "Keep this document. Share it with your doctor, family member, or local health office.",
+        ParagraphStyle("note", parent=styles["Normal"], fontSize=12, leading=16,
+                       textColor=colors.HexColor("#b45309"),
+                       backColor=colors.HexColor("#fef3c7"),
+                       borderPad=8, spaceAfter=16)
+    ))
+
+    for line in action_plan.split("\n"):
+        line = line.strip().lstrip("#").strip()
+        if not line:
+            story.append(Spacer(1, 4))
+            continue
+        if len(line) > 2 and line[0].isdigit() and line[1] in ".)":
+            story.append(Paragraph(line, section_style))
+        elif line.startswith("- ") or line.startswith("• "):
+            story.append(Paragraph("★  " + line[2:], bullet_style))
+        elif any(kw in line.lower() for kw in ["phone:", "call:", "address:", "website:", "http", "www", "211"]):
+            story.append(Paragraph("📞  " + line, resource_style))
+        else:
+            story.append(Paragraph(line, body_style))
+
+    doc.build(story)
+    return buf.getvalue()
+
+
 def ask_api(question: str, history: list[dict]) -> dict:
     response = httpx.post(
         f"{API_URL}/ask",
@@ -268,9 +408,22 @@ def render_sidebar():
         if pairs:
             st.divider()
             if st.button("Clear conversation", key="clear_chat", use_container_width=True):
+                clear_history(session_id)
                 st.session_state.messages = []
                 st.session_state.followups = []
                 st.rerun()
+
+            if st.button("Generate Action Plan PDF", key="gen_pdf", use_container_width=True):
+                with st.spinner("Generating action plan..."):
+                    plan = generate_action_plan(pairs)
+                    pdf_bytes = build_pdf(plan, pairs)
+                st.download_button(
+                    label="Download PDF",
+                    data=pdf_bytes,
+                    file_name=f"indiana_health_action_plan_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
 
 
 def handle_response(prompt: str):
