@@ -1,13 +1,19 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from query import embed_query, search, answer
+from query import embed_query, rewrite_query, search, answer
 
 app = FastAPI(title="Health RAG API")
 
 
+class Message(BaseModel):
+    role: str
+    content: str
+
+
 class QueryRequest(BaseModel):
     question: str
+    history: list[Message] = []
     top_k: int = 5
 
 
@@ -24,7 +30,11 @@ class QueryResponse(BaseModel):
 
 @app.post("/ask", response_model=QueryResponse)
 def ask(request: QueryRequest):
-    query_vector = embed_query(request.question)
+    history = [m.model_dump() for m in request.history]
+
+    standalone = rewrite_query(request.question, history)
+
+    query_vector = embed_query(standalone)
     chunks = search(query_vector, k=request.top_k)
 
     if not chunks:
@@ -32,7 +42,7 @@ def ask(request: QueryRequest):
 
     return QueryResponse(
         question=request.question,
-        answer=answer(request.question, chunks),
+        answer=answer(request.question, chunks, history),
         sources=[
             Source(
                 url=c["url"],

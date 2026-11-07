@@ -6,10 +6,16 @@ import streamlit as st
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 
 
-def ask_api(question: str) -> dict:
+def ask_api(question: str, history: list[dict]) -> dict:
     response = httpx.post(
         f"{API_URL}/ask",
-        json={"question": question},
+        json={
+            "question": question,
+            "history": [
+                {"role": m["role"], "content": m["content"]}
+                for m in history
+            ],
+        },
         timeout=60,
     )
     response.raise_for_status()
@@ -50,7 +56,7 @@ def main():
                 st.session_state.messages.append({"role": "user", "content": suggestion})
                 with st.spinner("Thinking..."):
                     try:
-                        result = ask_api(suggestion)
+                        result = ask_api(suggestion, st.session_state.messages[:-1])
                         st.session_state.messages.append({
                             "role": "assistant",
                             "content": result["answer"],
@@ -73,7 +79,7 @@ def main():
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    result = ask_api(prompt)
+                    result = ask_api(prompt, st.session_state.messages[:-1])
                     st.markdown(result["answer"])
                     if result.get("sources"):
                         with st.expander("Sources"):
