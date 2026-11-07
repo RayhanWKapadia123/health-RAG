@@ -102,6 +102,32 @@ def render_county_card(row: pd.Series):
     c2.metric("Diabetes", f"{row['diabetes_percent']}%")
 
 
+def render_history_sidebar(placeholder):
+    # TODO: replace st.session_state.messages with MongoDB query here
+    # e.g. messages = db["health_rag"]["conversations"].find({"session_id": session_id})
+    messages = st.session_state.messages
+
+    pairs = []
+    i = 0
+    while i < len(messages) - 1:
+        if messages[i]["role"] == "user" and messages[i + 1]["role"] == "assistant":
+            pairs.append((messages[i]["content"], messages[i + 1]["content"]))
+            i += 2
+        else:
+            i += 1
+
+    with placeholder.container():
+        st.markdown("### Conversation History")
+        if pairs:
+            for idx, (question, answer) in enumerate(reversed(pairs)):
+                label = question if len(question) <= 50 else question[:47] + "..."
+                with st.expander(f"Q{len(pairs) - idx}: {label}"):
+                    st.markdown(f"**You:** {question}")
+                    st.markdown(f"**Assistant:** {answer}")
+        else:
+            st.caption("No history yet. Ask a question to get started.")
+
+
 def main():
     st.set_page_config(
         page_title="Indiana Healthcare Intelligence",
@@ -120,6 +146,9 @@ def main():
         api_key = st.sidebar.text_input("Anthropic API Key", type="password")
     if not api_key:
         st.warning("Enter your Anthropic API key in the sidebar to enable chat.")
+
+    history_placeholder = st.sidebar.empty()
+    render_history_sidebar(history_placeholder)
 
     df = load_data()
 
@@ -161,6 +190,8 @@ def main():
             st.session_state.messages.append({"role": "assistant", "content": reply})
         else:
             st.error("Add your API key in the sidebar first.")
+
+    render_history_sidebar(history_placeholder)
 
     if st.session_state.messages:
         if st.button("Clear chat"):
