@@ -1,0 +1,13 @@
+1. Essentially tested scraping on a single file
+2. Moving on to scraping all of the links accessible from the main home page url using A-Z
+3. Want to clean all of the files, and remove the random HTML tags that have nothing to do with the content itself using another scrit
+4. Ran into errors for scraping some of the PDF's, planning on doing a second pass using the same path as in 2 to get the PDF docs
+5. Upload to repo with zipped files and allow for later transformation
+
+
+TLDR
+idoh_ouput/html contains raw HTML files
+idoh_ouput/clean contains cleaned HTML files
+
+scrape.py used for getting raw HTML files
+clean.py used for cleaning
