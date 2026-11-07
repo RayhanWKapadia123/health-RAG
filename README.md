@@ -97,6 +97,22 @@ Open **http://localhost:8501** in your browser and start asking questions.
 
 ---
 
+## Chrome Extension
+
+A lightweight chat popup that talks to your local API — no extra setup required beyond the Docker stack already running.
+
+### Load the extension
+
+1. Run `make build && make up` to ensure the backend is running with CORS enabled.
+2. Open `chrome://extensions` in Chrome.
+3. Enable **Developer mode** (toggle in the top-right corner).
+4. Click **Load unpacked** and select the `extension/` folder in this project.
+5. Click the extension icon in the Chrome toolbar to open the chat popup.
+
+> The Docker stack must be running locally for the extension to work. The popup shows a **Connected** / **API offline** status badge so you always know the state.
+
+---
+
 ## Inspecting the database
 
 ```bash

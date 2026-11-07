@@ -1,9 +1,17 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from query import embed_query, rewrite_query, search, answer
+from query import embed_query, rewrite_query, search, answer, generate_followups
 
 app = FastAPI(title="Health RAG API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class Message(BaseModel):
@@ -56,3 +64,17 @@ def ask(request: QueryRequest):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+class FollowupRequest(BaseModel):
+    question: str
+    answer: str
+
+
+class FollowupResponse(BaseModel):
+    followups: list[str]
+
+
+@app.post("/followups", response_model=FollowupResponse)
+def followups(request: FollowupRequest):
+    return FollowupResponse(followups=generate_followups(request.question, request.answer))

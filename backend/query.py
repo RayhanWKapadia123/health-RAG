@@ -98,6 +98,28 @@ def answer(question: str, chunks: list[dict], history: list[dict]) -> str:
     return response.choices[0].message.content
 
 
+def generate_followups(question: str, answer_text: str) -> list[str]:
+    response = _openai.chat.completions.create(
+        model="gpt-5.6-terra",
+        max_completion_tokens=256,
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You generate follow-up questions for a healthcare data chatbot about Indiana counties. "
+                    "Given a question and answer, return exactly 3-4 short follow-up questions the user might ask next. "
+                    "If the answer mentions specific counties, organizations, or health programs, include questions about "
+                    "contact information, phone numbers, or names of relevant people or agencies when appropriate. "
+                    "Return only the questions, one per line, no numbering, no bullets, no extra text."
+                ),
+            },
+            {"role": "user", "content": f"Question: {question}\n\nAnswer: {answer_text}"},
+        ],
+    )
+    raw = response.choices[0].message.content.strip()
+    return [q.strip() for q in raw.splitlines() if q.strip()][:4]
+
+
 def ask(query: str):
     print(f"\nQuestion: {query}\n")
     print("Searching database...")
