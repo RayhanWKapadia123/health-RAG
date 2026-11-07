@@ -42,6 +42,22 @@ services:
     profiles:
       - scrape
 
+  ingest:
+    build: ./backend
+    container_name: health-rag-ingest
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
+    volumes:
+      - ./health_data_zip:/data/health_data_zip:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: ["python", "ingest_local.py"]
+    profiles:
+      - ingest
+
   query:
     build: ./backend
     container_name: health-rag-query
@@ -73,6 +89,8 @@ services:
   streamlit:
     build: ./frontend
     container_name: health-rag-streamlit
+    env_file:
+      - .env
     environment:
       API_URL: http://api:8000
     ports:

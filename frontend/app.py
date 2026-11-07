@@ -1,7 +1,7 @@
 import os
 
-import anthropic
 import httpx
+from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
 from pathlib import Path
@@ -9,6 +9,7 @@ from pathlib import Path
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
+_openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 
 def ask_api(question: str, history: list[dict]) -> dict:
@@ -27,21 +28,25 @@ def ask_api(question: str, history: list[dict]) -> dict:
     return response.json()
 
 
-def generate_followups(question: str, answer: str, api_key: str) -> list[str]:
-    client = anthropic.Anthropic(api_key=api_key)
-    response = client.messages.create(
-        model="claude-haiku-5-5",
+def generate_followups(question: str, answer: str) -> list[str]:
+    response = _openai.chat.completions.create(
+        model="gpt-4o-mini",
         max_tokens=256,
-        system=(
-            "You generate follow-up questions for a healthcare data chatbot about Indiana counties. "
-            "Given a question and answer, return exactly 3-4 short follow-up questions the user might ask next. "
-            "If the answer mentions specific counties, organizations, or health programs, include questions about "
-            "contact information, phone numbers, or names of relevant people or agencies when appropriate. "
-            "Return only the questions, one per line, no numbering, no bullets, no extra text."
-        ),
-        messages=[{"role": "user", "content": f"Question: {question}\n\nAnswer: {answer}"}],
+        messages=[
+            {
+                "role": "system",
+                "content": (
+                    "You generate follow-up questions for a healthcare data chatbot about Indiana counties. "
+                    "Given a question and answer, return exactly 3-4 short follow-up questions the user might ask next. "
+                    "If the answer mentions specific counties, organizations, or health programs, include questions about "
+                    "contact information, phone numbers, or names of relevant people or agencies when appropriate. "
+                    "Return only the questions, one per line, no numbering, no bullets, no extra text."
+                ),
+            },
+            {"role": "user", "content": f"Question: {question}\n\nAnswer: {answer}"},
+        ],
     )
-    raw = next(b for b in response.content if b.type == "text").text.strip()
+    raw = response.choices[0].message.content.strip()
     return [q.strip() for q in raw.splitlines() if q.strip()][:4]
 
 
@@ -68,7 +73,7 @@ def render_history_sidebar(placeholder):
             st.caption("No history yet. Ask a question to get started.")
 
 
-def handle_response(prompt: str, api_key: str):
+def handle_response(prompt: str):
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
@@ -76,7 +81,7 @@ def handle_response(prompt: str, api_key: str):
                 reply = result["answer"]
                 sources = result.get("sources", [])
             except httpx.HTTPStatusError as e:
-                reply = "No relevant data found. Try scraping more pages first." if e.response.status_code == 404 else f"API error: {e}"
+                reply = "No relevant data found. Try ingesting documents first." if e.response.status_code == 404 else f"API error: {e}"
                 sources = []
             except httpx.ConnectError:
                 reply = f"Could not connect to the API at {API_URL}. Is it running?"
@@ -94,9 +99,8 @@ def handle_response(prompt: str, api_key: str):
         "sources": sources,
     })
 
-    if api_key:
-        with st.spinner("Generating follow-up questions..."):
-            st.session_state.followups = generate_followups(prompt, reply, api_key)
+    with st.spinner("Generating follow-up questions..."):
+        st.session_state.followups = generate_followups(prompt, reply)
 
 
 def main():
@@ -113,12 +117,6 @@ def main():
 
     st.title("Indiana Healthcare Intelligence")
     st.caption("Ask questions about county-level healthcare disparities across Indiana")
-
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        api_key = st.sidebar.text_input("Anthropic API Key", type="password")
-    if not api_key:
-        st.warning("Enter your Anthropic API key in the sidebar to enable follow-up suggestions.")
 
     history_placeholder = st.sidebar.empty()
     render_history_sidebar(history_placeholder)
@@ -145,7 +143,7 @@ def main():
                 st.session_state.messages.append({"role": "user", "content": suggestion})
                 with st.chat_message("user"):
                     st.markdown(suggestion)
-                handle_response(suggestion, api_key)
+                handle_response(suggestion)
                 render_history_sidebar(history_placeholder)
                 st.rerun()
 
@@ -157,7 +155,7 @@ def main():
                 st.session_state.messages.append({"role": "user", "content": followup})
                 with st.chat_message("user"):
                     st.markdown(followup)
-                handle_response(followup, api_key)
+                handle_response(followup)
                 render_history_sidebar(history_placeholder)
                 st.rerun()
 
@@ -166,7 +164,7 @@ def main():
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-        handle_response(prompt, api_key)
+        handle_response(prompt)
         render_history_sidebar(history_placeholder)
 
     if st.session_state.messages:

@@ -1,0 +1,59 @@
+Source: https://www.in.gov/health/laboratories/testing/hepatitis-b
+
+# Hepatitis B
+
+*Health > Laboratories > Testing > Hepatitis B*
+
+-
+-
+-
+-
+-
+-
+
+Hepatitis B Serological Testing
+
+1. Acceptable specimens:
+
+- serum, minimum 2ml
+- whole blood collected in a serum separator (SST) tube (e.g. tiger-top, gold top) then centrifuged to separate serum
+2. Specimens may be stored at refrigerated, frozen, or room temperature.
+3. Specimens must arrive at lab within 24 hours of collection if stored at room temperature. Specimens may arrive at lab within 3 days of collection if they remain between 2°C-8°C since collection.
+4. If frozen, specimens must ship on dry ice and arrive at lab still frozen. Avoid more than 3 freeze/thaw cycles.
+5. Whole blood must never be frozen, or it will hemolyze. Hemolyzed, lipemic, or heparinized specimens cannot be tested per assay manufacturer requirements.
+
+1. Serum/blood collection materials, including SST, tiger-top, or gold-top tubes
+2. Shipping boxes or containers with appropriate shipping labels
+
+- UN3373 Biological Substances, Category B shipping container
+- 9A shipping container provided by IDOH
+3. Access to LimsNet online account for entry submission
+
+1. Label tube with the date of collection
+2. Label tube with two of the following patient identifiers, which must match the LimsNet electronic entry for test acceptance:
+
+- First and last name
+- Date of birth
+- Your patient ID number
+3. Collect 3-4 ml whole blood sample in an SST (gold or tiger-top).
+4. Centrifuge whole blood to fully separate serum from the clot (recommend 10 min at 3000 RPM).
+5. Serum may be decanted and shipped in a leak-proof screw-top tube, or SST may be shipped.
+6. Freeze if >1 day is needed for specimen to arrive at IDOH Lab.
+7. Complete a LimsNet entry for the patient under Serology Outbreak tab, including patient name, date of birth, date of collection, sex, race, county of residence, date of onset, lab tests desired, and reason for testing. In addition, please include patient symptoms, travel history, and related vaccination/immunization history, if appropriate.
+8. Print a copy of the LimsNet submission cover page to include with shipment.
+
+1. Wrap the labeled specimen tube with absorbent material and place in the inner shipping canister.
+2. Place LimsNet submission cover page in outer container or in plastic bag to prevent contamination from specimen.
+3. Place the inner shipping canister and submission cover page into the outer shipping canister.
+4. Affix a mailing label to the outer canister with a return address and appropriate postage.
+5. Specimens should be shipped to arrive at IDOH Monday through Friday. It is not recommended to ship specimens which will be in transit over the weekend or holiday.
+6. Ship to:
+Attn: Serology Laboratory
+Indiana Department of Health Laboratory
+550 W 16th St Suite B
+Indianapolis, IN 46202
+317-921-5500
+
+Email: serology@health.in.gov (serology@health.IN.gov)
+
+Laboratory reports will be sent out via LimsNet and will be available within three to five business days.

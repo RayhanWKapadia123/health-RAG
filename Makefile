@@ -1,4 +1,4 @@
-.PHONY: build up down setup scrape query logs clean
+.PHONY: build up down setup scrape ingest query logs clean
 
 build:
 	docker-compose build
@@ -15,6 +15,9 @@ setup:
 scrape:
 	@if [ -z "$(url)" ]; then echo "Usage: make scrape url=https://example.com"; exit 1; fi
 	docker-compose run --rm scraper $(url)
+
+ingest:
+	docker-compose run --rm ingest
 
 query:
 	@if [ -z "$(q)" ]; then echo "Usage: make query q=\"your question\""; exit 1; fi

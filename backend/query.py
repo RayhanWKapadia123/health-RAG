@@ -80,10 +80,7 @@ def answer(question: str, chunks: list[dict], history: list[dict]) -> str:
         {
             "role": "system",
             "content": (
-                "You are a healthcare assistant. In plain and simple terms, answer the user's question "
-                "using only the context provided. If the answer is not in "
-                "the context, try to use the context to find the best answer. "
-                "Try to give as much relevant information as possible.\n\n"
+                "You are a healthcare assistant. In plain and simple terms, answer the user's question. \n\n"
                 f"Context:\n{context}"
             ),
         }
