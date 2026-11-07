@@ -1,6 +1,6 @@
 # Indiana health-RAG
 
-Indiana Healthcare Intelligence — a RAG-based chatbot.
+Indiana Healthcare Intelligence — a RAG-based chatbot for exploring county-level healthcare disparities across Indiana's 92 counties. Ask questions in plain English and get answers grounded in real public health data.
 
 ## Setup
 
@@ -10,45 +10,52 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage:
-### 1. Add an .env file and add your keys:
-    ```
-    export ANTHROPIC_API_KEY=sk-ant-...
-    export OPENAI_API_KEY=SOME_KEY
-    MONGO_URI=SOME_URI
-    ```
-    
-### 2. Start MongoDB
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your keys:
+
+```bash
+cp .env.example .env
 ```
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+MONGO_URI=mongodb://admin:password@localhost:27017/?authSource=admin
+```
+
+## Usage
+
+### 1. Start MongoDB
+```bash
 docker-compose up -d mongodb
 ```
 
-### 3. Set up the database
-```
+### 2. Set up the database
+```bash
 docker-compose run --rm setup
 ```
 
-### 4. Scrape a site
-```
+### 3. Scrape a site
+```bash
 docker-compose run --rm scraper https://www.in.gov/health/
 ```
 
-### 5. Ask a question
-```
+### 4. Ask a question (CLI)
+```bash
 docker-compose run --rm query "What is the Indiana department of health?"
 ```
 
-## Run Streamlit in browser
+### 5. Run the Streamlit app
 
+**Locally:**
 ```bash
 streamlit run src/app.py
 ```
 
-## Run Streamlit in Docker
-
+**Via Docker Compose:**
 ```bash
-docker build -t health-rag .
-docker run -p 8501:8501 --env-file .env health-rag
+docker-compose up streamlit
 ```
 
 Then open http://localhost:8501 in your browser.
