@@ -1,6 +1,8 @@
+import io
 import os
 
 import httpx
+from audiorecorder import audiorecorder
 from openai import OpenAI
 import streamlit as st
 from dotenv import load_dotenv
@@ -26,6 +28,15 @@ def ask_api(question: str, history: list[dict]) -> dict:
     )
     response.raise_for_status()
     return response.json()
+
+
+def transcribe_audio(audio) -> str:
+    buf = io.BytesIO()
+    audio.export(buf, format="wav")
+    buf.seek(0)
+    buf.name = "audio.wav"
+    result = _openai.audio.transcriptions.create(model="whisper-1", file=buf)
+    return result.text.strip()
 
 
 def generate_followups(question: str, answer: str) -> list[str]:
@@ -114,6 +125,8 @@ def main():
         st.session_state.messages = []
     if "followups" not in st.session_state:
         st.session_state.followups = []
+    if "last_audio_id" not in st.session_state:
+        st.session_state.last_audio_id = None
 
     st.title("Indiana Healthcare Intelligence")
     st.caption("Ask questions about county-level healthcare disparities across Indiana")
@@ -159,7 +172,24 @@ def main():
                 render_history_sidebar(history_placeholder)
                 st.rerun()
 
-    if prompt := st.chat_input("Ask about Indiana healthcare..."):
+    # Text input and mic button side by side
+    input_col, mic_col = st.columns([11, 1])
+
+    with input_col:
+        prompt = st.chat_input("Ask about Indiana healthcare...")
+
+    with mic_col:
+        audio = audiorecorder("🎙", "⏹", key="mic")
+
+    # Handle mic input — only fire once per new recording
+    if audio and len(audio) > 0:
+        audio_id = len(audio)
+        if audio_id != st.session_state.last_audio_id:
+            st.session_state.last_audio_id = audio_id
+            with st.spinner("Transcribing..."):
+                prompt = transcribe_audio(audio)
+
+    if prompt:
         st.session_state.followups = []
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
