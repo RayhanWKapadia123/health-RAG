@@ -1,4 +1,4 @@
-# health-RAG
+# Indiana health-RAG
 
 Indiana Healthcare Intelligence — a RAG-based chatbot for exploring county-level healthcare disparities across Indiana's 92 counties.
 
