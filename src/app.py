@@ -1,4 +1,6 @@
 import os
+
+import httpx
 import streamlit as st
 import pandas as pd
 import anthropic
@@ -152,31 +154,42 @@ def main():
 
     df = load_data()
 
-    # Render message history
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
+            if msg.get("sources"):
+                with st.expander("Sources"):
+                    for s in msg["sources"]:
+                        st.markdown(f"- [{s['title']}]({s['url']})")
 
-    # Suggested questions shown before first message
     if not st.session_state.messages:
         st.markdown("**Try asking:**")
         suggestions = [
-            "Which counties have the highest uninsured rates?",
-            "Which counties are Tier 1 Critical Need?",
-            "Compare LaGrange and Hamilton County",
-            "Where should a new community clinic be opened?",
+            "What services does the Indiana Department of Health provide?",
+            "What health programs are available in Indiana?",
+            "How do I report a public health concern in Indiana?",
+            "What resources exist for maternal health in Indiana?",
         ]
         for suggestion in suggestions:
             if st.button(suggestion, key=suggestion):
                 st.session_state.messages.append({"role": "user", "content": suggestion})
-                if api_key:
-                    reply = chat(suggestion, df, api_key)
-                    st.session_state.messages.append({"role": "assistant", "content": reply})
-                else:
-                    st.error("Add your API key in the sidebar first.")
+                with st.spinner("Thinking..."):
+                    try:
+                        result = ask_api(suggestion)
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": result["answer"],
+                            "sources": result.get("sources", []),
+                        })
+                    except httpx.HTTPStatusError as e:
+                        if e.response.status_code == 404:
+                            st.error("No relevant data found. Try scraping more pages first.")
+                        else:
+                            st.error(f"API error: {e}")
+                    except httpx.ConnectError:
+                        st.error(f"Could not connect to the API at {API_URL}. Is it running?")
                 st.rerun()
 
-    # Chat input
     if prompt := st.chat_input("Ask about Indiana healthcare..."):
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
