@@ -232,7 +232,7 @@ def generate_followups(question: str, answer: str) -> list[str]:
 def render_sidebar():
     with st.sidebar:
         st.markdown(
-            '<div class="sidebar-heading">Indiana Health RAG</div>',
+            '<div class="sidebar-heading">Hoosier Health Helper</div>',
             unsafe_allow_html=True,
         )
         st.markdown(
@@ -305,7 +305,7 @@ def handle_response(prompt: str):
 
 def main():
     st.set_page_config(
-        page_title="Indiana Health RAG",
+        page_title="Hoosier Health Helper",
         page_icon="🏥",
         layout="wide",
         initial_sidebar_state="expanded",
@@ -331,7 +331,7 @@ def main():
             <div class="rag-header">
                 <div class="logo">🏥</div>
                 <div>
-                    <h1>Indiana Healthcare Intelligence</h1>
+                    <h1>Hoosier Health Helper</h1>
                     <p>Ask questions about public health programs, services, and data across Indiana</p>
                 </div>
             </div>
