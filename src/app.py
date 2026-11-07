@@ -92,7 +92,7 @@ def chat(user_message: str, df: pd.DataFrame, api_key: str) -> str:
         ),
         messages=history,
     )
-    return response.content[0].text
+    return next(b for b in response.content if b.type == "text").text
 
 
 def generate_followups(question: str, answer: str, provider: str, api_key: str) -> list[str]:
@@ -113,7 +113,8 @@ def generate_followups(question: str, answer: str, provider: str, api_key: str) 
             system=system_prompt,
             messages=[{"role": "user", "content": user_content}],
         )
-        raw = response.content[0].text.strip()
+        text_block = next(b for b in response.content if b.type == "text")
+        raw = text_block.text.strip()
     else:
         from openai import OpenAI
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
@@ -237,7 +238,7 @@ def main():
 
     # Follow-up question buttons shown after last answer
     if st.session_state.followups and st.session_state.messages:
-        st.markdown("**You might also want to ask:**")
+        st.markdown("**Based on the response, you might also want to ask:**")
         for i, followup in enumerate(st.session_state.followups):
             if st.button(followup, key=f"followup_{i}", use_container_width=True):
                 st.session_state.followups = []
