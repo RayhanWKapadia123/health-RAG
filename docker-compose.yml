@@ -18,19 +18,19 @@ services:
       start_period: 15s
 
   setup:
-    build: .
+    build: ./backend
     container_name: health-rag-setup
     environment:
       MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
     depends_on:
       mongodb:
         condition: service_healthy
-    entrypoint: ["python", "/app/mongo-init/setup.py"]
+    entrypoint: ["python", "mongo-init/setup.py"]
     profiles:
       - setup
 
   scraper:
-    build: .
+    build: ./backend
     container_name: health-rag-scraper
     env_file:
       - .env
@@ -43,7 +43,7 @@ services:
       - scrape
 
   query:
-    build: .
+    build: ./backend
     container_name: health-rag-query
     env_file:
       - .env
@@ -57,7 +57,7 @@ services:
       - query
 
   api:
-    build: .
+    build: ./backend
     container_name: health-rag-api
     env_file:
       - .env
@@ -71,7 +71,7 @@ services:
     entrypoint: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
   streamlit:
-    build: .
+    build: ./frontend
     container_name: health-rag-streamlit
     environment:
       API_URL: http://api:8000
@@ -79,7 +79,6 @@ services:
       - "8501:8501"
     depends_on:
       - api
-    entrypoint: ["streamlit", "run", "/app/src/app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
 
 volumes:
   mongodb_data:

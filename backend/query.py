@@ -51,9 +51,11 @@ def answer(query: str, chunks: list[dict]) -> str:
             {
                 "role": "system",
                 "content": (
-                    "You are a helpful assistant. Answer the user's question "
+                    "You are a healthcare assisstant. Answer the user's question "
                     "using only the context provided. If the answer is not in "
-                    "the context, say so."
+                    "the context, try to use the context to find the best answer. "
+                    "Try to give as much relevant information as possible. Use emojis. "
+
                 ),
             },
             {
