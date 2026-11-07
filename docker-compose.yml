@@ -1,0 +1,60 @@
+services:
+  mongodb:
+    image: mongodb/mongodb-atlas-local:latest
+    container_name: health-rag-mongodb
+    restart: unless-stopped
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: admin
+      MONGODB_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/27017"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+
+  setup:
+    build: .
+    container_name: health-rag-setup
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: ["python", "/app/mongo-init/setup.py"]
+    profiles:
+      - setup
+
+  scraper:
+    build: .
+    container_name: health-rag-scraper
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    profiles:
+      - scrape
+
+  query:
+    build: .
+    container_name: health-rag-query
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint: ["python", "query.py"]
+    profiles:
+      - query
+
+volumes:
+  mongodb_data:
