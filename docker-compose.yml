@@ -61,6 +61,9 @@ services:
       context: .
       dockerfile: Dockerfile.streamlit
     container_name: health-rag-streamlit
+  api:
+    build: .
+    container_name: health-rag-api
     env_file:
       - .env
     environment:
@@ -70,7 +73,7 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-    restart: unless-stopped
+    entrypoint: ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
 
 volumes:
   mongodb_data:
