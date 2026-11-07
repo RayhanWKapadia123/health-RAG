@@ -56,5 +56,21 @@ services:
     profiles:
       - query
 
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: health-rag-streamlit
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://admin:password@mongodb:27017/?authSource=admin
+    ports:
+      - "8501:8501"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mongodb_data:
